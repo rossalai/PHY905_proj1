@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     cout<<"n: ";
     cin >> n;
     
-    mat A(n,n);
+    mat a(n,n);
     vec b(n);
     vec x = zeros<vec>(n);
     
@@ -28,13 +28,27 @@ int main(int argc, char** argv) {
     for (int i=0;i<n;i++){
         b(i)=i-1;
         for (int j=0;j<n;j++){
-            A(i,j)=i+j+1;
+            a(i,j)=i+j+1;
             if(i==1 && j ==1)
-                A(i,j)=1;
+                a(i,j)=1;
         }
     }
     
-    print_vals(A,b,x,n);
+    double temp=0;
+    for (int k=0;k<=n-2;k++){
+        cout<<"1"<<endl;
+        for (int i=k+1;i<=n-1;i++){
+            cout<<"2"<<endl;
+            temp=a(i,k)/a(k,k);
+            for ( int j=k;j<=n-1;j++){
+                cout<<"3"<<endl;
+                a(i,j)=a(i,j)-a(k,j)*temp;
+            }
+            b(i)=b(i)-temp*b(k);
+        }
+    }
+    
+    print_vals(a,b,x,n);
     
     
     return 0;
