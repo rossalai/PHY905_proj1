@@ -19,23 +19,40 @@ int main(int argc, char** argv) {
     int n;
     cout<<"n: ";
     cin >> n;
+    double h = 1/(double(n)+1);
     
-    mat a(n,n);
+    mat a = zeros<mat>(n,n);
     vec b(n);
-    vec x = zeros<vec>(n);
+    vec v = zeros<vec>(n);
+    vec x(n);
+    
+    //initialize x values
+    x(0)=h;
+    for (int i=1; i<n ;i++)
+        x(i)=x(i-1)+h;
+
     
     //initialize matrix and vector
+//    for (int i=0;i<n;i++){
+//        b(i)=i;
+//        for (int j=0;j<n;j++){
+//            a(i,j)=i+j+2;
+//            if(i==0 && j ==0)
+//                a(i,j)=1;
+//        }
+//    }
     for (int i=0;i<n;i++){
-        b(i)=i;
         for (int j=0;j<n;j++){
-            a(i,j)=i+j+2;
-            if(i==0 && j ==0)
-                a(i,j)=1;
+            if(i==j)
+                a(i,j)=2;
+            else if (i==j+1 or i==j-1)
+                a(i,j)=-1;
         }
+        b(i)=h*h*100*exp(-10*(x(i)));
     }
     
     cout<<"Before Gauss elimination"<<endl;
-    print_vals(a,b,x,n);
+    print_vals(a,b,v,n);
     
     //do forward elimination
     double temp=0;
@@ -53,31 +70,31 @@ int main(int argc, char** argv) {
 
     //do back substitution
     if(abs(a(n-1,n-1))<=pow(10,-14)){
-        x(n-1)=1;
+        v(n-1)=1;
         a(n-1,n-1)=0;
     }
     else{
-        x(n-1)=b(n-1)/a(n-1,n-1);
+        v(n-1)=b(n-1)/a(n-1,n-1);
     }
     double sum=0;
     for (int i=n-2;i>=0;i--){
         for (int j=n-1;j>i;j--){
-            sum+=a(i,j)*x(j);
+            sum+=a(i,j)*v(j);
         }
-        x(i)=(b(i)-sum)/a(i,i);
-        if(abs(x(i))<=pow(10,-14))
-            x(i)=0;
+        v(i)=(b(i)-sum)/a(i,i);
+        if(abs(v(i))<=pow(10,-14))
+            v(i)=0;
         sum=0;
     }
     
     cout<<"After Gauss elimination"<<endl;
-    print_vals(a,b,x,n); 
+    print_vals(a,b,v,n); 
     
     
     return 0;
 }
 
-void print_vals(mat A, vec b, vec x,int n){
+void print_vals(mat A, vec b, vec v,int n){
     cout<<"A: ";
     for (int i=0;i<n;i++){
         if(i>0){
@@ -93,9 +110,9 @@ void print_vals(mat A, vec b, vec x,int n){
         cout<<b(i)<<" ";
     }
     cout<<endl;
-    cout<<"x: ";
+    cout<<"v: ";
     for (int i=0;i<n;i++){
-        cout<<x(i)<<" ";
+        cout<<v(i)<<" ";
     }
     cout<<endl;
     
