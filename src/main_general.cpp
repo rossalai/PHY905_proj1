@@ -9,6 +9,9 @@
 #include "../armadillo" //use this when using netbeans
 //#include <armadillo> // need to change to this before turning in
 #include <sys/time.h>
+#include<time.h>
+#include<fstream>
+#include<math.h>
 using namespace std;
 using namespace arma;
 
@@ -26,11 +29,13 @@ int main(int argc, char** argv) {
     double h = 1/(double(n)+1);
     double start=0;
     double end=0;
+    clock_t begin,finish;
     
     mat a = zeros<mat>(n,n);
     vec b(n);
     vec v = zeros<vec>(n);
     vec x(n);
+    double FLOPS=0.0;
     
     //initialize x values
     x(0)=h;
@@ -63,16 +68,20 @@ int main(int argc, char** argv) {
     }
     
     get_walltime(&start);
+    begin=clock();
     
     //do forward elimination
     double temp=0;
     for (int k=0;k<=n-2;k++){
         for (int i=k+1;i<=n-1;i++){
             temp=a(i,k)/a(k,k);
+            FLOPS+=1;
             for ( int j=k;j<=n-1;j++){
                 a(i,j)-=a(k,j)*temp;
+                FLOPS+=2;
             }
             b(i)-=temp*b(k);
+            FLOPS+=2;
             if(abs(b(i))<=pow(10,-14))
                 b(i)=0;
         }
@@ -85,26 +94,55 @@ int main(int argc, char** argv) {
     }
     else{
         v(n-1)=b(n-1)/a(n-1,n-1);
+        FLOPS+=1;
     }
     double sum=0;
     for (int i=n-2;i>=0;i--){
         for (int j=n-1;j>i;j--){
             sum+=a(i,j)*v(j);
+            FLOPS+=2;
         }
         v(i)=(b(i)-sum)/a(i,i);
+        FLOPS+=2;
         if(abs(v(i))<=pow(10,-14))
             v(i)=0;
         sum=0;
     }
     
     get_walltime(&end);
+    finish=clock();
     
     if(n<=10){
         cout<<"After Gauss elimination"<<endl;
         print_vals(a,b,v,n); 
     }
     
+    cout<<"Flops, Flops/n: "<<FLOPS<<", "<<FLOPS/(n*n)<<endl;
     cout<<"Total walltime (sec) : "<<end-start<<endl;
+    cout<<"Total CPU time (sec) : "<<((double)finish-(double)begin)/
+            CLOCKS_PER_SEC<<endl;
+    cout<<"MFLOP/s: "<<pow(10,-6)*FLOPS/(end-start)<<endl;
+    
+    
+    vec u(n);
+    ofstream outfile("output_general.txt");
+    ofstream error("error_general.txt");
+    ofstream actual("output_analytic.txt");
+    outfile<<"0.0 0.0"<<endl;
+    actual<<"0.0 0.0"<<endl;
+    for (int i=0;i<n;i++){
+        outfile<<x(i)<<" "<<v(i)<<endl;
+        u(i)=1-(1-exp(-10))*x(i)-exp(-10*x(i));
+        actual<<x(i)<<" "<<u(i)<<endl;
+        error<<x(i)<<" "<<log10(abs((v(i)-u(i))/u(i)))<<endl;
+    }
+    outfile<<"1.0 0.0"<<endl;
+    actual<<"1.0 0.0"<<endl;
+    outfile.close();
+    actual.close();
+    error.close();
+    
+    
     return 0;
 }
 
