@@ -67,23 +67,17 @@ int main(int argc, char** argv) {
     }
 
     //do back substitution
-//    if(abs(a(n-1,n-1))<=pow(10,-14)){
-//        v(n-1)=1;
-//        a(n-1,n-1)=0;
-//    }
-//    else{
-//        v(n-1)=b(n-1)/a(n-1,n-1);
-//    }
-//    double sum=0;
-//    for (int i=n-2;i>=0;i--){
-//        for (int j=n-1;j>i;j--){
-//            sum+=a(i,j)*v(j);
-//        }
-//        v(i)=(b(i)-sum)/a(i,i);
-//        if(abs(v(i))<=pow(10,-14))
-//            v(i)=0;
-//        sum=0;
-//    }
+    if(abs(d(n-1))<=pow(10,-14)){
+        v(n-1)=1;
+        d(n-1)=0;
+    }
+    else{
+        v(n-1)=b(n-1)/d(n-1);
+    }
+    for (int i=n-2;i>=0;i--){
+        v(i)=(b(i)-c(i)*v(i+1))/d(i);
+    }
+
     
     if(n<=10){
         cout<<"After Gauss elimination"<<endl;
