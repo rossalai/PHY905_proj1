@@ -1,5 +1,5 @@
 /* Project: 905 Project 1
- * File:   main.cpp
+ * File:   main_general.cpp
  * Author: alaina ross
  *
  * Created on January 12, 2017, 4:16 PM
@@ -8,18 +8,24 @@
 #include <iostream>
 #include "../armadillo" //use this when using netbeans
 //#include <armadillo> // need to change to this before turning in
+#include <sys/time.h>
 using namespace std;
 using namespace arma;
 
-//prints vectors and matrix
+//template functions
 void print_vals(mat , vec , vec ,int);
+void get_walltime_( double* wcTime);
+void get_walltime( double* wcTime);
 
 // performs gauss elimination
+// for general matrix
 int main(int argc, char** argv) {
     int n;
     cout<<"n: ";
     cin >> n;
     double h = 1/(double(n)+1);
+    double start=0;
+    double end=0;
     
     mat a = zeros<mat>(n,n);
     vec b(n);
@@ -56,6 +62,8 @@ int main(int argc, char** argv) {
         print_vals(a,b,v,n);
     }
     
+    get_walltime(&start);
+    
     //do forward elimination
     double temp=0;
     for (int k=0;k<=n-2;k++){
@@ -89,12 +97,14 @@ int main(int argc, char** argv) {
         sum=0;
     }
     
+    get_walltime(&end);
+    
     if(n<=10){
         cout<<"After Gauss elimination"<<endl;
         print_vals(a,b,v,n); 
     }
     
-    
+    cout<<"Total walltime (sec) : "<<end-start<<endl;
     return 0;
 }
 
@@ -120,4 +130,14 @@ void print_vals(mat A, vec b, vec v,int n){
     }
     cout<<endl;
     
+}
+
+void get_walltime_( double* wcTime) {
+  struct timeval tp;
+  gettimeofday(&tp, NULL);
+  *wcTime = ( double)(tp.tv_sec + tp.tv_usec/1000000.0);
+}
+
+void get_walltime( double* wcTime) {
+  get_walltime_(wcTime);
 }
