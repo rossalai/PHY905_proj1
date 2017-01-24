@@ -51,8 +51,10 @@ int main(int argc, char** argv) {
         b(i)=h*h*100*exp(-10*(x(i)));
     }
     
-    cout<<"Before Gauss elimination"<<endl;
-    print_vals(a,b,v,n);
+    if(n<=10){
+        cout<<"Before Gauss elimination"<<endl;
+        print_vals(a,b,v,n);
+    }
     
     //do forward elimination
     double temp=0;
@@ -60,9 +62,9 @@ int main(int argc, char** argv) {
         for (int i=k+1;i<=n-1;i++){
             temp=a(i,k)/a(k,k);
             for ( int j=k;j<=n-1;j++){
-                a(i,j)=a(i,j)-a(k,j)*temp;
+                a(i,j)-=a(k,j)*temp;
             }
-            b(i)=b(i)-temp*b(k);
+            b(i)-=temp*b(k);
             if(abs(b(i))<=pow(10,-14))
                 b(i)=0;
         }
@@ -87,8 +89,10 @@ int main(int argc, char** argv) {
         sum=0;
     }
     
-    cout<<"After Gauss elimination"<<endl;
-    print_vals(a,b,v,n); 
+    if(n<=10){
+        cout<<"After Gauss elimination"<<endl;
+        print_vals(a,b,v,n); 
+    }
     
     
     return 0;
