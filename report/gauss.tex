@@ -56,36 +56,61 @@ Turning these continuous functions in discrete ones we can approximate the secon
 -\frac{u_{i+1}+u_{i-1}-2u_i}{h^2}=f_i \quad i=1,2...n
 \label{deriv}
 \end{equation}
-where $h$ is the step size defined as $h=1/(n+1)$ and n is the number of grid points. This set of equations then can be rearranged as a matrix equation $\hat{A}\vec{v}=\vec{b}$ where:
+where $h$ is the step size defined as $h=1/(n+1)$ and n is the number of grid points. This set of equations then can be rearranged as a matrix equation $\hat{A}\vec{u}=\vec{b}$ where:
 \begin{equation}
 \hat{A}=\begin{bmatrix} a_{1,1} & a_{1,2} &a_{1,n} \\ a_{2,1}  & a_{2,2} &a_{2,n} \\ a_{n,1}  & a_{n,2}  &a_{n,n} \end{bmatrix}
-\quad \vec{v}=\begin{bmatrix} v_1  \\ v_2\\ v_n \end{bmatrix} 
-\quad \vec{b}=\begin{bmatrix} b_1  \\ b_2\\ b_n \end{bmatrix}
+\quad \vec{u}=\begin{bmatrix} u_1  \\ u_2\\ u_n \end{bmatrix} 
+\quad \vec{b}=\begin{bmatrix} h^2f_1  \\ h^2f_2\\ h^2f_n \end{bmatrix}
 \end{equation}
 
 To solve this matrix equation the first goal is to get the matrix in row echelon form (shown below), where the only nonzero elements form the upper right triangle of the matrix. This step is called forward elimination and is done analytically via elementary row operations i.e. addition, interchanging rows, and multiplication by a constant.
 
 \begin{equation}
 \begin{bmatrix} a_{1,1} & a_{1,2} &a_{1,n} \\ 0  & \tilde{a}_{2,2} &\tilde{a}_{2,n} \\ 0  & 0  &\tilde{a}_{n,n} \end{bmatrix}
-\begin{bmatrix} v_1  \\ v_2\\ v_n \end{bmatrix}=\begin{bmatrix} \tilde{b}_1  \\ \tilde{b}_2\\ \tilde{b}_n \end{bmatrix}
+\begin{bmatrix} u_1  \\ u_2\\ u_n \end{bmatrix}=\begin{bmatrix} \tilde{b}_1  \\ \tilde{b}_2\\ \tilde{b}_n \end{bmatrix}
 \label{reduced}
 \end{equation}
 
-Algorithmically, this can be calculated two ways: the simpler way which only uses addition and multiplication by a constant but will fail if $a_{1,1}$ = 0, or the more sophisticated way where rows are interchanged to ensure a solution even when $a_{1,1}$ = 0~\cite{book}. In this work we will use the former method and simply ensure that for all matrices $a_{1,1}$ $\neq$ 0.
+Algorithmically, this can be calculated two ways: the simpler way which only uses addition and multiplication by a constant but will fail if $a_{i,i}$ = 0, or the more sophisticated way where rows are interchanged to ensure a solution even when $a_{i,i}$ = 0~\cite{book}. In this work we will use the former method and simply ensure that for all matrices $a_{i,i}$ $\neq$ 0. \\
 
-We start with the first row and column as what is called the pivot; this is the column that will be updated to be zeros based on the first pivot element (the first element in the row/the corner piece). Then, all values in the rest of the matrix are updated via the same operations that were used in the corresponding element of the pivot column. In the next iteration, the pivot moves to the next row/column and the old pivot becomes unused data for the rest of the iteration process, meaning that each iteration the subspace to update becomes smaller. This process can be viewed graphically in Fig.~\ref{algorithm}.
+In this work we implement gauss elimination for a general matrix as well as for a tridiagonal matrix and study the performance characteristics and numerical accuracy of each for matrix sizes of $n=10,100,1000$. In addition, we compare the performance of our solutions to that of a more sophisticated algorithm known as LU decomposition in order to determine the most efficient algorithm for the problem at hand. In Section~\ref{methods}, the implementation of the various algorithms are described. In Section~\ref{results} the performance and accuracy of the code are analyzed. Finally, in Section~\ref{conc} we give a summary and our conclusions.
 
-Once the elimination process is complete the next step is called backwards substitution. First, the solution for $x_n$ is obtained trivially from Eq.~\ref{reduced} as $\tilde{b}_n/\tilde{a}_{n,n}$. Next, this solution for $x_n$ is substituted into the $n-1$ equation to solve for $x_{n-1}$. This is repeated until the whole vector $\vec{x}$ has been solved for. Algorithmically this corresponds to:
+\section{methods}
+\label{methods}
+To begin the Gauss elimination we implement the arrays using the matrix and vector classes in the armadillo library [cite]. We then start with the first row and column of the matrix as what is called the pivot; this is the column that will be updated to be zeros based on the first pivot element (the first element in the row/the corner piece). Then, all values in the rest of the matrix are updated via the same operations that were used in the corresponding element of the pivot column. In the next iteration, the pivot moves to the next row/column and the old pivot becomes unused data for the rest of the iteration process, meaning that each iteration the subspace to update becomes smaller. This process can be viewed graphically in Fig.~\ref{algorithm}.
+
+Once the elimination process is complete the next step is called backwards substitution. First, the solution for $u_n$ is obtained trivially from Eq.~\ref{reduced} as $\tilde{b}_n/\tilde{a}_{n,n}$. Next, this solution for $u_n$ is substituted into the $n-1$ equation to solve for $u_{n-1}$. This is repeated until the whole vector $\vec{u}$ has been solved for. Algorithmically this corresponds to:
 \begin{equation}
-x_i=\frac{1}{\tilde{a}_{i,i}}\left(\tilde{b}_i + \sum_{j=i+1}^n \tilde{a}_{i,j}x_j \right)
+u_i=\frac{1}{\tilde{a}_{i,i}}\left(\tilde{b}_i + \sum_{j=i+1}^n \tilde{a}_{i,j}u_j \right)
 \end{equation}
 
-In this work we implement the general gauss elimination algorithm as described above for matrix sizes of $n=10,100,1000$, and compare the performance to that of a general tridiagonal matrix and the specific tridiagonal matrix that results from Eq.~\ref{deriv} both shown below:
+In addition, we compare the performance of the general algorithm describes above to that of a general tridiagonal matrix as well as the specific tridiagonal matrix that results from Eq.~\ref{deriv} both shown below:
 \begin{equation}
 \hat{A}=\begin{bmatrix} d_{1} & c_{1} &0&0\\ a_{1}  & d_{2} &c_{2}&0 \\ 0  & a_{n-2}  &d_{n-1}&c_{n-1} \\ 0  &0& a_{n-1}  &d_{n} \end{bmatrix}=
-\begin{bmatrix} 2 & -1&0&0\\ -1  & 2 &0&0 \\ 0  & -1  &2&-1 \\ 0  &0& -1  &2 \end{bmatrix}
+\begin{bmatrix} 2 & -1&0&0\\ -1  & 2 &-1&0 \\ 0  & -1  &2&-1 \\ 0  &0& -1  &2 \end{bmatrix}
 \end{equation}
+\indent In the tridiagonal case we can now use three vectors to store the matrix $\hat{A}$ which greatly decreases the amount of memory needed for a given problem as well as the number of floating point operations (FLOPs). Furthermore, for the specific tridiagonal case only one vector is needed as the $\vec{c}$ vector will never be updated and the $\vec{a}$ vector will become zeroes. \\
 
+Finally, we compare the performance of our solutions to that of the LU decomposition algorithm from the armadillo library [cite]. In LU decomposition the matrix $\hat{A}$ is decomposed as $\hat{A}=\hat{L}\hat{U}$ where $\hat{L}$ and $\hat{U}$ are lower and upper triangular matrices respectively:
+\begin{equation}
+\hat{L}=\begin{bmatrix} L_{1,1} & 0&0 \\ L_{2,1}  & L_{2,2} &0 \\ L_{n,1}  & L_{n,2}  &L_{n,n}\end{bmatrix} \quad
+\hat{U}=\begin{bmatrix} U_{1,1} & U_{1,2}& U_{1,n}\\ 0  & U_{2,2} &U_{2,n} \\ 0  & 0  &U_{n,n}\end{bmatrix} 
+\end{equation}
+The matrix equation $\hat{A}\vec{u}=\vec{b}$ then becomes:
+\begin{equation}
+\hat{A}\vec{u}=\hat{L}(\hat{U}\vec{u})=\hat{L}\vec{y}=\vec{b}.
+\end{equation}
+This is then solved via forward substitution for $\vec{y}$ and then backwards substitution for $\vec{u}$ which allows for fewer FLOPs but the same amount of memory as the general gauss elimination.
+
+For the source function, $f(x)$, we use $f(x)=100e^{-10x}$. Analytically, this gives the solution for $u(x)$ as:
+\begin{equation}
+u(x)=1-(1-e^{-10})x-e^{-10x}.
+\end{equation}
+To examine the accuracy of our solution the error is defined as:
+\begin{equation}
+\epsilon_i=log_10\left(\left|\frac{u_i-u(x_i)}{u(x_i)}\right|\right)
+\end{equation}
+where $u_i$ are the solutions obtained from gauss elimination and $u(x_i)$ are the analytic solutions.
 
 \begin{figure*}[t]
 \includegraphics[scale=0.2]{algorithm.jpg}
@@ -94,6 +119,10 @@ In this work we implement the general gauss elimination algorithm as described a
 \end{figure*}
 
 \section{results}
+\label{results}
+For all three algorithms that have been developed, we analyze the performance by the CPU time as well as the number of FLOPs required as a function of matrix size. In addition, we analyze the accuracy of the algorithms by investigating the error as described in the previous section. Finally, we compare the performance of our developed algorithms to that of the LU decomposition.
+
+
 \begin{table}[h]
 \centering
 \begin{tabular}{|c|c|}
@@ -110,7 +139,23 @@ $log_{10}(h)$ & $max(\epsilon_i)$\\
 \hline
 \end{tabular}
 \caption{Relative error as a function of step size}
-\label{mpi_table}
+\label{err_table}
+\end{table}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|}
+\hline
+algorithm& FLOPs\\
+\hline
+gauss&\\
+tridiag&\\
+specific&\\
+LU  decomp&\\
+\hline
+\end{tabular}
+\caption{Comparison of number of FLOPs for each algorithm.}
+\label{flop_table}
 \end{table}
 
 \begin{figure}[t]
@@ -120,7 +165,8 @@ $log_{10}(h)$ & $max(\epsilon_i)$\\
 \end{figure}
 
 \section{conclusions}
+\label{conc}
 
-%\bibliography{gauss}
+\bibliography{gauss}
 \end{document}
 
