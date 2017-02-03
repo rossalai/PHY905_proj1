@@ -1,13 +1,14 @@
 /* Project: 905 Project 1
- * File:   main.cpp
+ * File:   main_tridiag.cpp
  * Author: alaina ross
  *
- * Created on January 12, 2017, 4:16 PM
+ * Created on January 24, 2017, 1:45 PM
  */
 
 #include <iostream>
-#include "../armadillo" //use this when using netbeans
-//#include <armadillo> // need to change to this before turning in
+#include<fstream>
+#include <armadillo>
+#include<time.h>
 using namespace std;
 using namespace arma;
 
@@ -15,10 +16,12 @@ using namespace arma;
 void print_vals(vec,vec, vec, vec, vec,int);
 
 // performs gauss elimination
+// for general tridiagonal matrix
 int main(int argc, char** argv) {
     int n;
     cout<<"n: ";
     cin >> n;
+    
     double h = 1/(double(n)+1);
     
     vec b(n);
@@ -27,22 +30,14 @@ int main(int argc, char** argv) {
     vec c(n-1);
     vec d(n);
     vec x(n);
+    clock_t begin,finish;   
     
     //initialize x values
     x(0)=h;
     for (int i=1; i<n ;i++)
         x(i)=x(i-1)+h;
 
-    
-    //initialize matrix and vector
-//    for (int i=0;i<n;i++){
-//        b(i)=i;
-//        for (int j=0;j<n;j++){
-//            a(i,j)=i+j+2;
-//            if(i==0 && j ==0)
-//                a(i,j)=1;
-//        }
-//    }
+    //initialize vectors
     for (int i=0;i<n;i++){
         d(i)=2;
         b(i)=h*h*100*exp(-10*(x(i)));
@@ -56,6 +51,8 @@ int main(int argc, char** argv) {
         cout<<"Before Gauss elimination"<<endl;
         print_vals(a,c,d,b,v,n);            
     }
+    
+    begin=clock();    
     
     //do forward elimination
     double temp=0;
@@ -77,12 +74,36 @@ int main(int argc, char** argv) {
     for (int i=n-2;i>=0;i--){
         v(i)=(b(i)-c(i)*v(i+1))/d(i);
     }
+    
+    finish=clock();
 
     
     if(n<=10){
         cout<<"After Gauss elimination"<<endl;
         print_vals(a,c,d,b,v,n);
     }
+    
+    cout<<"Total CPU time (sec) : "<<((double)finish-(double)begin)/
+            CLOCKS_PER_SEC<<endl;
+    
+    vec u(n);
+    ofstream outfile("output_tridiag.txt");
+    ofstream error("error_tridiag.txt");
+    ofstream actual("output_analytic.txt");
+    outfile<<"0.0 0.0"<<endl;
+    actual<<"0.0 0.0"<<endl;
+    error<<log10(h)<<endl;
+    for (int i=0;i<n;i++){
+        outfile<<x(i)<<" "<<v(i)<<endl;
+        u(i)=1-(1-exp(-10))*x(i)-exp(-10*x(i));
+        actual<<x(i)<<" "<<u(i)<<endl;
+        error<<x(i)<<" "<<log10(abs((v(i)-u(i))/u(i)))<<endl;
+    }
+    outfile<<"1.0 0.0"<<endl;
+    actual<<"1.0 0.0"<<endl;
+    outfile.close();
+    actual.close();
+    error.close();
     
     
     return 0;

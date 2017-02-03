@@ -6,8 +6,9 @@
  */
 
 #include <iostream>
-#include "../armadillo" //use this when using netbeans
-//#include <armadillo> // need to change to this before turning in
+#include<fstream>
+#include <armadillo>
+#include<time.h>
 using namespace std;
 using namespace arma;
 
@@ -20,7 +21,9 @@ int main(int argc, char** argv) {
     int n;
     cout<<"n: ";
     cin >> n;
+    
     double h = 1/(double(n)+1);
+    clock_t begin,finish;
     
     vec b(n);
     vec v = zeros<vec>(n);
@@ -33,17 +36,8 @@ int main(int argc, char** argv) {
     x(0)=h;
     for (int i=1; i<n ;i++)
         x(i)=x(i-1)+h;
-
     
-    //initialize matrix and vector
-//    for (int i=0;i<n;i++){
-//        b(i)=i;
-//        for (int j=0;j<n;j++){
-//            a(i,j)=i+j+2;
-//            if(i==0 && j ==0)
-//                a(i,j)=1;
-//        }
-//    }
+    //initialize vectors
     for (int i=0;i<n;i++){
         d(i)=2;
         b(i)=h*h*100*exp(-10*(x(i)));
@@ -57,6 +51,8 @@ int main(int argc, char** argv) {
         cout<<"Before Gauss elimination"<<endl;
         print_vals(a,c,d,b,v,n);            
     }
+    
+    begin=clock();
     
     //do forward elimination
     double temp=0;
@@ -85,6 +81,30 @@ int main(int argc, char** argv) {
         print_vals(a,c,d,b,v,n);
     }
     
+    finish=clock();
+    
+    cout<<"Total CPU time (sec) : "<<((double)finish-(double)begin)/
+            CLOCKS_PER_SEC<<endl;
+    
+    vec u(n);
+    ofstream outfile("output_specific.txt");
+    ofstream error("error_specific.txt");
+    ofstream actual("output_analytic.txt");
+    outfile<<"0.0 0.0"<<endl;
+    actual<<"0.0 0.0"<<endl;
+    error<<log10(h)<<endl;
+    for (int i=0;i<n;i++){
+        outfile<<x(i)<<" "<<v(i)<<endl;
+        u(i)=1-(1-exp(-10))*x(i)-exp(-10*x(i));
+        actual<<x(i)<<" "<<u(i)<<endl;
+        error<<x(i)<<" "<<log10(abs((v(i)-u(i))/u(i)))<<endl;
+    }
+    outfile<<"1.0 0.0"<<endl;
+    actual<<"1.0 0.0"<<endl;
+    outfile.close();
+    actual.close();
+    error.close();
+
     
     return 0;
 }
