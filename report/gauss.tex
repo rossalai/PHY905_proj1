@@ -9,11 +9,12 @@
 
 
 \begin{document}
+
   \newcommand {\nc} {\newcommand}
   \nc {\Sec} [1] {Sec.~\ref{#1}}
   \nc {\IR} [1] {\textcolor{red}{#1}} 
 
-\title{Gauss elimination}
+\title{PHY905 Project 1 - Gauss Elimination}
 
 
 \author{Alaina~Ross}
@@ -23,11 +24,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{abstract}
- %\noindent {\bf Background:} Systems of equations are often solved via matrix equations and Gauss elimination. If the necessary matrices are large enough then the calculation is performed computationally. \\
- %{\bf Purpose:} The goal of this work is to parallelize a Gauss elimination code to determine the performance limits and test different parallel implementations. \\
- %{\bf Method:} We use both OpenMP and MPI parallelism separately and inspect their time to solution for varying matrix sizes and number of threads/processes. \\
- %{\bf Results:} We find the OpenMP implementation to be both simpler and better performing, while the MPI implementation has too much communication overhead for much performance increase. \\
- %{\bf Conclusions:} Our results demonstrate the importance of choosing the right form of parallelism for the given algorithm, in this case shared memory parallelism is the right choice.
+ \noindent {\bf Background:} To solve a differential equation computationally the derivative is approximated and a system of linear equations is solved instead. Such systems can be solved via matrix equations and Gauss elimination. \\
+ {\bf Purpose:} The goal of this work is to implement various Gauss elimination algorithms and study the accuracy and performance of each when applied to a system of equations which result from the Poisson equation with a given example from electromagnetism. \\
+ {\bf Method:} We use a general Gauss elimination algorithm as well as two for tridiagonal matrixes and one which uses LU decomposition. We inspect the time to solution for varying matrix sizes and compare to the analytic solution to evaluate the accuracy of the algorithms. \\ 
+ {\bf Results:} We find the most accurate matrix size is $10^5$ and the fastest algorithm for this matrix size is the tridiagonal algorithm. \\
+ {\bf Conclusions:} Our results demonstrate the importance of choosing the right algorithm for the given physical situation
+ Our results demonstrate the importance of choosing the right form of parallelism for the given algorithm, in this case shared memory parallelism is the right choice.
 \end{abstract}
 
 
@@ -75,9 +77,19 @@ Algorithmically, this can be calculated two ways: the simpler way which only use
 
 In this work we implement gauss elimination for a general matrix as well as for a tridiagonal matrix and study the performance characteristics and numerical accuracy of each for matrix sizes of $n=10,100,1000$. In addition, we compare the performance of our solutions to that of a more sophisticated algorithm known as LU decomposition in order to determine the most efficient algorithm for the problem at hand. In Section~\ref{methods}, the implementation of the various algorithms are described. In Section~\ref{results} the performance and accuracy of the code are analyzed. Finally, in Section~\ref{conc} we give a summary and our conclusions.
 
+\begin{figure*}[t]
+\includegraphics[scale=0.2]{algorithm.jpg}
+\caption{Graphical representation of forward elimination algorithm based on~\cite{graph} for (a) the first iteration, (b) the second iteration, and (c) the final iteration.}
+\label{algorithm}
+\end{figure*}
+
 \section{methods}
 \label{methods}
-To begin the Gauss elimination we implement the arrays using the matrix and vector classes in the armadillo library [cite]. We then start with the first row and column of the matrix as what is called the pivot; this is the column that will be updated to be zeros based on the first pivot element (the first element in the row/the corner piece). Then, all values in the rest of the matrix are updated via the same operations that were used in the corresponding element of the pivot column. In the next iteration, the pivot moves to the next row/column and the old pivot becomes unused data for the rest of the iteration process, meaning that each iteration the subspace to update becomes smaller. This process can be viewed graphically in Fig.~\ref{algorithm}.
+To begin the Gauss elimination we implement the arrays using the matrix and vector classes in the armadillo library~\cite{armadillo}. We then start with the first row and column of the matrix as what is called the pivot; this is the column that will be updated to be zeros based on the first pivot element (the first element in the row/the corner piece). Then, all values in the rest of the matrix are updated via the same operations that were used in the corresponding element of the pivot column. In the next iteration, the pivot moves to the next row/column and the old pivot becomes unused data for the rest of the iteration process, meaning that each iteration the subspace to update becomes smaller. This process can be viewed graphically in Fig.~\ref{algorithm}. The algorithm is given by:
+\begin{gather}
+a_{j,k}^{m+1}=a_{j,k}^{m}-\frac{a_{j,m}^{m}a_{m,k}^{m}}{a_{m,m}^m} \quad j,k=m+1...n\\
+b_j^{m+1}=b_j^m-\frac{a_{j,m}^m b_m^m}{a_{m,m}^m} \quad j=m+1...n 
+\end{gather}
 
 Once the elimination process is complete the next step is called backwards substitution. First, the solution for $u_n$ is obtained trivially from Eq.~\ref{reduced} as $\tilde{b}_n/\tilde{a}_{n,n}$. Next, this solution for $u_n$ is substituted into the $n-1$ equation to solve for $u_{n-1}$. This is repeated until the whole vector $\vec{u}$ has been solved for. Algorithmically this corresponds to:
 \begin{equation}
@@ -91,7 +103,7 @@ In addition, we compare the performance of the general algorithm describes above
 \end{equation}
 \indent In the tridiagonal case we can now use three vectors to store the matrix $\hat{A}$ which greatly decreases the amount of memory needed for a given problem as well as the number of floating point operations (FLOPs). Furthermore, for the specific tridiagonal case only one vector is needed as the $\vec{c}$ vector will never be updated and the $\vec{a}$ vector will become zeroes. \\
 
-Finally, we compare the performance of our solutions to that of the LU decomposition algorithm from the armadillo library [cite]. In LU decomposition the matrix $\hat{A}$ is decomposed as $\hat{A}=\hat{L}\hat{U}$ where $\hat{L}$ and $\hat{U}$ are lower and upper triangular matrices respectively:
+Finally, we compare the performance of our solutions to that of the LU decomposition algorithm from the armadillo library~\cite{armadillo}. In LU decomposition the matrix $\hat{A}$ is decomposed as $\hat{A}=\hat{L}\hat{U}$ where $\hat{L}$ and $\hat{U}$ are lower and upper triangular matrices respectively:
 \begin{equation}
 \hat{L}=\begin{bmatrix} L_{1,1} & 0&0 \\ L_{2,1}  & L_{2,2} &0 \\ L_{n,1}  & L_{n,2}  &L_{n,n}\end{bmatrix} \quad
 \hat{U}=\begin{bmatrix} U_{1,1} & U_{1,2}& U_{1,n}\\ 0  & U_{2,2} &U_{2,n} \\ 0  & 0  &U_{n,n}\end{bmatrix} 
@@ -108,64 +120,97 @@ u(x)=1-(1-e^{-10})x-e^{-10x}.
 \end{equation}
 To examine the accuracy of our solution the error is defined as:
 \begin{equation}
-\epsilon_i=log_10\left(\left|\frac{u_i-u(x_i)}{u(x_i)}\right|\right)
+\epsilon_i=log_{10}\left(\left|\frac{u_i-u(x_i)}{u(x_i)}\right|\right)
+\label{error}
 \end{equation}
 where $u_i$ are the solutions obtained from gauss elimination and $u(x_i)$ are the analytic solutions.
 
-\begin{figure*}[t]
-\includegraphics[scale=0.2]{algorithm.jpg}
-\caption{Graphical representation of forward elimination algorithm based on~\cite{graph} for (a) the first iteration, (b) the second iteration, and (c) the final iteration.}
-\label{algorithm}
-\end{figure*}
-
 \section{results}
 \label{results}
-For all three algorithms that have been developed, we analyze the performance by the CPU time as well as the number of FLOPs required as a function of matrix size. In addition, we analyze the accuracy of the algorithms by investigating the error as described in the previous section. Finally, we compare the performance of our developed algorithms to that of the LU decomposition.
+For all three algorithms that have been developed, we analyze the performance by the CPU time as well as the number of FLOPs required as a function of matrix size. In addition, we analyze the accuracy of the algorithms by investigating the error as described in the previous section. Finally, we compare the performance of our developed algorithms to that of the LU decomposition. \\
 
+Using each of the algorithms, we record the timing for varying matrix sizes in Table~\ref{time_table}. For the general gauss algorithm and LU decomposition matrices are used rather than simply vectors, because of this n values of $10^5$ and larger are not computed as the armadillo package does not support such large matrices. In general, the fastest algorithm was that for the specific tridiagonal matrix of this case, followed closely by the general tridiagonal algorithm, then LU decomposition and finally the general gauss elimination. Thinking generally about the problem this is the result we expect, the case that makes the most assumptions about the specific problem takes the least amount of time while the case the assumes the least takes the greatest amount of time.\\
 
-\begin{table}[h]
+\begin{table}[t]
 \centering
-\begin{tabular}{|c|c|}
+\begin{tabular}{|c|c|c|c|c|c|c|}
 \hline
-$log_{10}(h)$ & $max(\epsilon_i)$\\
+matrix size (n)&$10^2$& $10^3$& $10^4$&  $10^5$& $10^6$&\\
 \hline
--1&-1.1797\\
--2&-3.08804\\
--3&-5.08005\\
--4&-7.07929\\
--5&-9.00487\\
--6&-6.77135\\
--7&-5.96231\\
+Algorithm&\multicolumn{5}{|c|}{Time to solution (sec)}&FLOPs \\
+\hline
+General Gauss&0.007&10.7&&N/A&N/A&$\frac{2}{3}n^3$\\
+Tridiagonal &4.6E-5&1.3E-4&9.6E-4&0.01&0.08&$8n$\\
+Specific tridiag&3.8E-5&8.4E-5&0.001&0.006&0.065&$6n$\\
+LU  decomp&2.2E-4&0.02&1.21&N/A&N/A&$2n^2$\\
+\hline
+\end{tabular}
+\caption{Comparison of CPU time for each algorithm with varying matrix size.}
+\label{time_table}
+\end{table}
+
+\begin{figure}[b]
+\includegraphics[scale=0.33]{output}
+\caption{Solution to diff eqn as a function of matrix size}
+\label{output}
+\end{figure}
+
+The ordering of the time to solution for the various solutions is supported even more when the number of FLOPs for each algorithm is investigated as seen in the last column of Table~\ref{time_table}. The lowest number of operations are performed in the specific tridiagonal algorithm as the values above and below the diagonal in the matrix are known to be $-1$, so rather than fetching these values from memory and then performing operations (as with the tridiagonal algorithm), we can just use their values. The LU decomposition algorithm as described in Section~\ref{methods} skips the forward elimination algorithm (used in the general gauss elimination) which is very computationally heavy and so it has fewer FLOPs. \\
+
+%\begin{table}[b]
+%\centering
+%\begin{tabular}{|c|c|}
+%\hline
+%Algorithm& FLOPs\\
+%\hline
+%General Gauss&$\frac{2}{3}n^3$\\
+%Tridiagonal matrix&$8n$\\
+%Specific tridiagonal&$6n$\\
+%LU  decomposition&$2n^2$\\
+%\hline
+%\end{tabular}
+%\caption{Comparison of number of FLOPs for each algorithm.}
+%\label{flop_table}
+%\end{table}
+
+Finally, we wish to determine the accuracy of the developed algorithms. In Fig.~\ref{output} the final solution $u(x_i)$ is plotted for various matrix dimensions along with the analytic solution $u(x)$. From this plot it is clear that a matrix dimension of 100 is plenty large enough to qualitatively match the analytic solution. Quantitatively, we use Equation~\ref{error} to determine the error of each algorithm. The maximum error for varying step sizes are given in Table~\ref{err_table}. As expected, as we increase the matrix dimension (and therefore have a more fine grid) the error decreases. This happens until we reach the overall minimum error at $n=10^5$ after which the error increases again as we increase the matrix size. This can be seen in Fig~\ref{err_fig}.
+
+\begin{table}[t]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+n&$log_{10}(h)$ & $max(\epsilon_i)$\\
+\hline
+10&-1&-1.1797\\
+$10^2$&-2&-3.08804\\
+$10^3$&-3&-5.08005\\
+$10^4$&-4&-7.07929\\
+$10^5$&-5&-9.00487\\
+$10^6$&-6&-6.77135\\
+$10^7$&-7&-5.96231\\
 \hline
 \end{tabular}
 \caption{Relative error as a function of step size}
 \label{err_table}
 \end{table}
 
-\begin{table}[h]
-\centering
-\begin{tabular}{|c|c|}
-\hline
-algorithm& FLOPs\\
-\hline
-gauss&\\
-tridiag&\\
-specific&\\
-LU  decomp&\\
-\hline
-\end{tabular}
-\caption{Comparison of number of FLOPs for each algorithm.}
-\label{flop_table}
-\end{table}
-
-\begin{figure}[t]
-\includegraphics[scale=0.35]{output}
-\caption{Solution to diff eqn as a function of matrix size}
-\label{output}
+\begin{figure}[b]
+\includegraphics[scale=0.33]{error}
+\caption{Error of algorithms as a function of step size.}
+\label{err_fig}
 \end{figure}
 
 \section{conclusions}
 \label{conc}
+In summary, the goal of this work was to implement Gauss elimination in order to solve the Poisson equation for a particular example with the most precision and fasted compute time. The second derivative in the Poisson equation is approximated using a three point formula, which turns the problem into a system of linear equations that can be modeled with a matrix equation. \\
+
+The resulting matrix is a tridiagonal matrix with two's on the diagonal and negative one's in the off diagonal bands; this allows one to use algorithms that are only tridiagonal matrices as well as this specific tridiagonal matrix. We implemented four algorithms, one for general Gauss elimination, one for a general tridiagonal matrix, one for the specific matrix, and lastly one which used LU decomposition. \\
+
+First, each of these algorithms was studied for various matrix sizes to determine which had the fastest compute time. In addition, the number of floating point operations for each algorithm was calculated to aid in the explanation for the comparative timing. As expected, the fastest algorithm was the one with the fewest FLOPs which was designed for the specific tridiagonal matrix in this problem. Finally, the error of the solution was explored as a function of step size to determine the optimal matrix size of $n=10^5$. \\
+
+There are a number of ways that these code can be improved upon, for example there are more sophisticated algorithms which employ pivoting and pipelining~\cite{other_gauss,gauss_other2}. In addition, because the matrices were implemented with armadillo, matrices larger than $10^4$ were too large to use. While the general Gauss elimination algorithm and LU decomposition algorithms were the two slowest, if they were needed due to a dense matrix the arrays for the matrixes would need to be allocated without armadillo. Finally, the general Gauss elimination algorithm is trivially parallelized with OpenMP, which would lead to large increases in performance for large matrices. \\
+
+Overall, the fastest and most accurate solutions were found using the algorithm specific to the tridiagonal matrix used with $n=10^5$. This shows that sometimes an algorithm that is tailored to the specific problem can be much more powerful than a general algorithm, even with the loss of generality. In addition, it emphasizes that the smallest step size in a calculation is not always the best as very small step sizes can often lead to large errors.
 
 \bibliography{gauss}
 \end{document}
